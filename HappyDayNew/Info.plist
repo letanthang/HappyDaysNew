@@ -34,5 +34,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We use this to import photo</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We use this to record your voice</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>We use this to transcribe your voice</string>
 </dict>
 </plist>
