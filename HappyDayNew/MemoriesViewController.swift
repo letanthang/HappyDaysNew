@@ -11,7 +11,7 @@ import AVFoundation
 import Photos
 import Speech
 
-class MemoriesViewController: UICollectionViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+class MemoriesViewController: UICollectionViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UICollectionViewDelegateFlowLayout {
     var memories = [URL]()
     
     override func viewDidLoad() {
@@ -35,11 +35,97 @@ class MemoriesViewController: UICollectionViewController, UIImagePickerControlle
         checkPermissions()
     }
     
+    override func numberOfSections(in collectionView: UICollectionView) -> Int {
+        return 2
+    }
+    
+    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        if section == 1 {
+            return memories.count
+        } else {
+            return 0
+        }
+    }
+    
+    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Memory", for: indexPath) as! MemoryCell
+        let memory = memories[indexPath.item]
+        
+        cell.imageView.image = UIImage(contentsOfFile: thumbnailURL(for: memory).path)
+        
+        if cell.gestureRecognizers == nil {
+            let gesture = UILongPressGestureRecognizer(target: self, action: #selector(cellLongPressed))
+            gesture.minimumPressDuration = 0.25
+            cell.addGestureRecognizer(gesture)
+            
+            cell.layer.borderColor = UIColor.white.cgColor
+            cell.layer.borderWidth = 3
+            cell.layer.cornerRadius = 10
+            
+        }
+        
+        return cell
+        
+    }
+    
+    func cellLongPressed(sender: UILongPressGestureRecognizer) {
+        if sender.state == UIGestureRecognizerState.began {
+            
+        }
+        
+        if sender.state == .ended {
+            
+        }
+        
+    }
+    
+    func recordMemory() {
+        
+    }
+    
+    func finishRecording(success: Bool) {
+        
+    }
+    
+    func startTranscription(memory: URL) {
+        
+    }
+    
+    override func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+        return collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: "Header", for: indexPath)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
+        if section == 1 {
+            return CGSize.zero
+        } else {
+            return CGSize(width: 0, height: 50)
+        }
+    }
+    
+    func imageURL(for memory: URL) -> URL {
+        return memory.appendingPathExtension("jpg")
+    }
+    
+    func thumbnailURL(for memory: URL) -> URL {
+        return memory.appendingPathExtension("thumb")
+    }
+    
+    func audioURL(for memory: URL) -> URL {
+        return memory.appendingPathExtension("m4a")
+    }
+    
+    func transcriptionURL(for memory: URL) -> URL {
+        return memory.appendingPathExtension("txt")
+    }
+    
+    
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
         dismiss(animated: true, completion: nil)
         
         if let possibleImage = info[UIImagePickerControllerOriginalImage] as? UIImage {
             saveNewMemory(image: possibleImage)
+            loadMemories()
         }
     }
     
@@ -142,7 +228,7 @@ class MemoriesViewController: UICollectionViewController, UIImagePickerControlle
         print("files count = \(files.count)")
         print(memories)
         
-        //self.collectionView?.reloadSections(IndexSet(integer: 1))
+        self.collectionView?.reloadSections(IndexSet(integer: 1))
         
     }
     
