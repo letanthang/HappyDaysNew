@@ -11,13 +11,20 @@ import AVFoundation
 import Photos
 import Speech
 
-class MemoriesViewController: UICollectionViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UICollectionViewDelegateFlowLayout {
+class MemoriesViewController: UICollectionViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UICollectionViewDelegateFlowLayout, AVAudioRecorderDelegate {
+    
     var memories = [URL]()
+    var activeMemory: URL!
+    
+    var recordingURL: URL!
+    var audioRecorder: AVAudioRecorder?
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         loadMemories()
+        recordingURL = getDocumentsDirectory().appendingPathComponent("recording.m4a")
         
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addTapped))
 
@@ -71,6 +78,14 @@ class MemoriesViewController: UICollectionViewController, UIImagePickerControlle
     func cellLongPressed(sender: UILongPressGestureRecognizer) {
         if sender.state == UIGestureRecognizerState.began {
             
+            if let cell = sender.view as? MemoryCell {
+                if let indexPath = collectionView?.indexPath(for: cell) {
+                    activeMemory = memories[indexPath.item]
+                    
+                    recordMemory()
+                }
+            }
+            
         }
         
         if sender.state == .ended {
@@ -81,9 +96,61 @@ class MemoriesViewController: UICollectionViewController, UIImagePickerControlle
     
     func recordMemory() {
         
+        collectionView?.backgroundColor = UIColor(red: 0.8, green: 0, blue: 0, alpha: 0.9)
+        
+        let recordingSession = AVAudioSession.sharedInstance()
+        
+        do {
+            // configure for the session for recording and playback through the speaker
+            
+            try recordingSession.setCategory(AVAudioSessionCategoryPlayAndRecord, with: .defaultToSpeaker)
+            
+            try recordingSession.setActive(true)
+            // set up high quality recording session
+            let settings = [AVFormatIDKey: Int(kAudioFormatMPEG4AAC), AVSampleRateKey: 4400, AVNumberOfChannelsKey: 2, AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue]
+            // create audio recording, and assign ourself as delegate
+            
+            self.audioRecorder = try AVAudioRecorder(url: recordingURL, settings: settings)
+            audioRecorder?.delegate = self
+            audioRecorder?.record()
+            
+            
+        } catch let error {
+            print("Failed to record \(error.localizedDescription)")
+            finishRecording(success: false)
+        }
+
+        
+    }
+    
+    func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
+        if !flag {
+            finishRecording(success: false)
+        }
     }
     
     func finishRecording(success: Bool) {
+        
+        collectionView?.backgroundColor = UIColor.darkGray
+        
+        if success {
+            do {
+                let memoryAudio = audioURL(for: activeMemory)
+                let fm = FileManager.default
+                
+                if fm.fileExists(atPath: memoryAudio.path) {
+                    try fm.removeItem(at: memoryAudio)
+                }
+                
+                try fm.copyItem(at: recordingURL, to: memoryAudio)
+                
+                startTranscription(memory: activeMemory)
+                
+
+            } catch let error {
+                print("Failed to write disk \(error.localizedDescription)")
+            }
+        }
         
     }
     
